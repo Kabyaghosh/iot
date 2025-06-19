@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Home LED Control (Kabya)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #12141d;
+      --bg-light: #1c1f2f;
+      --primary: #6a5af9;
+      --primary-light: #8b7efc;
+      --text: #e0e0e0;
+      --text-muted: #8e94a8;
+      --accent-on: #f8d55a;
+      --accent-off: #3a3f5c;
+      --danger: #f35c4c;
+      --shadow-color: rgba(0, 0, 0, 0.2);
+      --shadow-glow: rgba(248, 213, 90, 0.3);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-image: radial-gradient(circle at top, var(--bg-light), var(--bg-dark));
+      color: var(--text);
+      font-family: 'Poppins', sans-serif;
+      min-height: 100vh;
+    }
+    
+    .page-wrapper {
+        width: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        padding: 40px 20px;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 420px;
+      text-align: center;
+      animation: fadeIn 0.6s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* --- Login Page Styles --- */
+    #loginForm {
+        background: var(--bg-light);
+        padding: 36px 48px;
+        border-radius: 24px;
+        box-shadow: 0 10px 50px var(--shadow-color);
+        border: 1px solid var(--accent-off);
+    }
+
+    #loginForm h2 { font-size: 2em; margin-bottom: 8px; }
+    #loginForm p { color: var(--text-muted); margin-bottom: 30px; }
+
+    input[type="email"], input[type="password"] {
+      padding: 14px 18px; border-radius: 12px; border: 2px solid transparent;
+      background-color: var(--bg-dark); color: var(--text); width: 100%;
+      font-family: 'Poppins', sans-serif; font-size: 1rem;
+      transition: all 0.3s; margin-bottom: 16px;
+    }
+
+    input[type="email"]:focus, input[type="password"]:focus {
+      outline: none; border-color: var(--primary);
+      box-shadow: 0 0 0 4px rgba(106, 90, 249, 0.3);
+    }
+
+    button {
+      padding: 15px; margin-top: 10px; border-radius: 12px; border: none;
+      width: 100%; background: var(--primary); color: #fff;
+      font-weight: 600; font-size: 1.1rem; cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    button:hover {
+      background: var(--primary-light); transform: translateY(-3px);
+      box-shadow: 0 4px 15px rgba(106, 90, 249, 0.4);
+    }
+
+    #loginError, #loading { color: var(--danger); margin-top: 15px; font-size: 0.9em; min-height: 1.2em; }
+    #loading { color: var(--text-muted); font-size: 1.2rem; }
+
+    /* --- Dashboard Styles --- */
+    #dashboard header { margin-bottom: 40px; }
+    #dashboard h1 { font-size: 2.2rem; font-weight: 700; color: var(--text); }
+    .creator-tag { font-size: 1.2rem; font-weight: 600; color: var(--primary-light); margin-top: 5px; }
+    #welcomeMessage { font-size: 1rem; color: var(--text-muted); margin-top: 15px; }
+    
+    .control-panel {
+        background-color: var(--bg-light);
+        border-radius: 24px;
+        padding: 40px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 25px;
+        border: 1px solid var(--accent-off);
+        box-shadow: 0 10px 40px var(--shadow-color);
+        transition: border-color 0.5s ease, box-shadow 0.5s ease;
+    }
+    
+    .control-panel.on {
+        border-color: var(--accent-on);
+        box-shadow: 0 0 50px var(--shadow-glow);
+    }
+    
+    #ledControl {
+        cursor: pointer;
+        transition: transform 0.2s ease;
+    }
+    #ledControl:active {
+        transform: scale(0.95);
+    }
+
+    #bulbIcon {
+        width: 150px;
+        height: 150px;
+        color: var(--accent-off);
+        transition: all 0.5s ease-out;
+    }
+    
+    #bulbIcon.on {
+        color: var(--accent-on);
+        filter: drop-shadow(0 0 25px var(--accent-on));
+    }
+
+    .device-status h3 {
+        font-size: 1.5rem;
+        font-weight: 600;
+        margin-bottom: 5px;
+    }
+
+    #status {
+      font-size: 1rem;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      transition: color 0.5s ease;
+    }
+
+    #status.on {
+        color: var(--accent-on);
+    }
+    
+    #ledSwitch { display: none; }
+
+    #logout {
+      background: transparent;
+      border: 2px solid var(--danger);
+      color: var(--danger);
+      max-width: 250px;
+      margin-top: 20px;
+    }
+    #logout:hover {
+        background: var(--danger);
+        color: #fff;
+        box-shadow: 0 4px 15px rgba(243, 92, 76, 0.4);
+    }
+
+    @media (max-width: 480px) {
+        #dashboard h1 { font-size: 1.8rem; }
+        .creator-tag { font-size: 1.1rem; }
+        #bulbIcon { width: 120px; height: 120px; }
+        .control-panel { padding: 30px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="page-wrapper">
+
+    <!-- Login Form -->
+    <div class="container" id="loginFormContainer">
+      <div id="loginForm">
+        <h2>Welcome Back</h2>
+        <p>Login to your Smart Home</p>
+        <input type="email" id="email" placeholder="Email">
+        <input type="password" id="password" placeholder="Password">
+        <button onclick="login()">Login</button>
+        <div id="loginError"></div>
+      </div>
+      <div id="loading" style="display:none;">Logging in...</div>
+    </div>
+
+    <!-- Dashboard -->
+    <div class="container" id="dashboard" style="display:none;">
+      <header>
+        <h1>Smart Home</h1>
+        <p class="creator-tag">Made by Kabya Ghosh (use-69)</p>
+        <p id="welcomeMessage">Welcome, <span id="userDisplayName"></span></p>
+      </header>
+
+      <div class="control-panel" id="controlPanel">
+        <label for="ledSwitch" id="ledControl">
+            <svg id="bulbIcon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 18v-5.25m0 0a6.01 6.01 0 001.5-.189m-1.5.189a6.01 6.01 0 01-1.5-.189m3.75 7.478a12.06 12.06 0 01-4.5 0m3.75 2.311a7.5 7.5 0 01-7.5 0c1.433-.923 2.577-1.255 3.75-1.255s2.317.332 3.75 1.255zM3.105 11.25h17.79c.566 0 .934.558.753 1.102l-1.246 3.895A1.875 1.875 0 0118.63 17.25H5.37a1.875 1.875 0 01-1.742-1.003L2.352 12.352c-.18-.544.187-1.102.753-1.102zM12 3v.012A4.875 4.875 0 0116.875 7.5h.012a4.875 4.875 0 01-4.875 4.875A4.875 4.875 0 017.125 7.5h-.012A4.875 4.875 0 0112 3z" />
+            </svg>
+        </label>
+        <div class="device-status">
+            <h3>Living Room Light</h3>
+            <div id="status">Status: ...</div>
+        </div>
+        <input type="checkbox" id="ledSwitch">
+        <button id="logout" onclick="logout()">Logout</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Firebase JS SDKs (unchanged) -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, setPersistence, inMemoryPersistence } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+    import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyArqTImm0-YrEfWEjrH6DCdY9vrJQsayIg",
+      authDomain: "smart-home-94ea7.firebaseapp.com",
+      databaseURL: "https://smart-home-94ea7-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "smart-home-94ea7",
+      storageBucket: "smart-home-94ea7.firebasestorage.app",
+      messagingSenderId: "666241752139",
+      appId: "1:666241752139:web:4b7718ce631f40e89401ce",
+      measurementId: "G-VRGJLYERVG"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getDatabase(app);
+    
+    setPersistence(auth, inMemoryPersistence);
+
+    const loginFormContainer = document.getElementById('loginFormContainer');
+    const loginForm = document.getElementById('loginForm');
+    const dashboard = document.getElementById('dashboard');
+    const loading = document.getElementById('loading');
+    const status = document.getElementById('status');
+    const ledSwitch = document.getElementById('ledSwitch');
+    const userDisplayName = document.getElementById('userDisplayName');
+    const loginError = document.getElementById('loginError');
+    const bulbIcon = document.getElementById('bulbIcon');
+    const controlPanel = document.getElementById('controlPanel');
+
+    window.login = function () {
+      loginError.textContent = '';
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+
+      if (!email || !password) {
+        loginError.textContent = 'Please enter both email and password.';
+        return;
+      }
+      
+      loginForm.style.display = 'none';
+      loading.style.display = 'block';
+
+      signInWithEmailAndPassword(auth, email, password)
+        .catch(err => {
+          let message = err.message.replace('Firebase: ', '').replace(/ \(auth.*\)\.?/, '.');
+          loginError.textContent = 'Login failed: ' + message;
+          loading.style.display = 'none';
+          loginForm.style.display = 'block';
+        });
+    }
+
+    function setupRealtimeListener() {
+      const relayRef = ref(db, '/relay');
+      onValue(relayRef, (snapshot) => {
+        const val = snapshot.val();
+        if (val === 1) {
+          status.textContent = "Status: ON";
+          status.classList.add('on');
+          bulbIcon.classList.add('on');
+          controlPanel.classList.add('on');
+          ledSwitch.checked = true;
+        } else {
+          status.textContent = "Status: OFF";
+          status.classList.remove('on');
+          bulbIcon.classList.remove('on');
+          controlPanel.classList.remove('on');
+          ledSwitch.checked = false;
+        }
+      });
+    }
+    
+    ledSwitch.addEventListener('change', () => {
+        const newVal = ledSwitch.checked ? 1 : 0;
+        set(ref(db, '/relay'), newVal);
+    });
+
+    window.logout = function () { signOut(auth); }
+
+    onAuthStateChanged(auth, (user) => {
+      loading.style.display = 'none';
+      if (user) {
+        loginFormContainer.style.display = 'none';
+        dashboard.style.display = 'block';
+        
+        const name = user.email.split('@')[0];
+        const displayName = name.charAt(0).toUpperCase() + name.slice(1);
+        userDisplayName.textContent = displayName;
+        
+        setupRealtimeListener();
+      } else {
+        dashboard.style.display = 'none';
+        loginFormContainer.style.display = 'block';
+        loginForm.style.display = 'block';
+        document.getElementById('password').value = '';
+      }
+    });
+  </script>
+</body>
+</html>
