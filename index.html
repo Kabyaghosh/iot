@@ -280,7 +280,7 @@
     }
 
     function setupRealtimeListener() {
-      const relayRef = ref(db, '/RELAY_PIN');
+      const relayRef = ref(db, '/relay');
       onValue(relayRef, (snapshot) => {
         const val = snapshot.val();
         if (val === 1) {
